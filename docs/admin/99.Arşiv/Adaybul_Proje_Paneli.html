@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adaybul / Adayhavuzu - İnteraktif Proje Yönetim Paneli</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Chosen Palette: Corporate Trust & Tech -->
+    <!-- 
+        Primary: Slate (Backgrounds, Text) - Professionalism
+        Accent 1: Indigo (Actions, Highlights) - Trust/Tech
+        Accent 2: Emerald (Success, Growth) - Positive Metrics
+        Accent 3: Rose (Risks, Alerts) - Critical Points
+    -->
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 100%;
+            margin: 0 auto;
+            height: 300px;
+        }
+        @media (min-width: 768px) {
+            .chart-container { height: 350px; }
+        }
+        
+        /* Custom Scrollbar for sleek look */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+
+        .interactive-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .interactive-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border-color: #6366f1;
+        }
+        .active-phase {
+            border-left: 4px solid #6366f1;
+            background-color: #f8fafc;
+        }
+    </style>
+
+    <!-- Application Structure Plan: 
+         1. Dashboard Header: Proje kimliği ve özet durum.
+         2. Vizyon & Değer Önermesi (Grid): Aday ve Şirket perspektiflerini yan yana interaktif kartlarla sunar.
+         3. Teknik Mimari & Akış (Flow): Sistemin çalışma mantığını (Input -> AI -> Output) blok diyagram olarak gösterir. Tıklanınca detay açılır.
+         4. İş Modeli Simülatörü (Calculator): Kredi/Paket fiyatlamasını ve gelir projeksiyonunu hesaplar.
+         5. Yol Haritası & KPI (Timeline + Charts): Zaman çizelgesi ve başarı metrikleri.
+         6. Risk Matrisi (Heatmap): Renk kodlu risk tablosu.
+         Amaç: Dokümanı okutmak yerine, projenin "işleyen" bir demosu gibi hissettirmek.
+    -->
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased selection:bg-indigo-100 selection:text-indigo-800">
+
+    <!-- Navigation / Header -->
+    <header class="fixed top-0 w-full z-50 bg-white border-b border-slate-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">A</div>
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900 tracking-tight">ADAYBUL / ADAYHAVUZU</h1>
+                        <p class="text-xs text-slate-500 font-medium">Master Proje Yönetim Paneli v1.1</p>
+                    </div>
+                </div>
+                <nav class="hidden md:flex space-x-8">
+                    <button onclick="scrollToSection('vision')" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition">Vizyon</button>
+                    <button onclick="scrollToSection('architecture')" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition">Mimari</button>
+                    <button onclick="scrollToSection('business')" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition">İş Modeli</button>
+                    <button onclick="scrollToSection('roadmap')" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition">Yol Haritası & KPI</button>
+                </nav>
+                <div class="flex items-center gap-2">
+                    <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full border border-green-200">Durum: Taslak</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="pt-24 pb-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+
+        <!-- SECTION 1: EXECUTIVE SUMMARY & VISION -->
+        <section id="vision" class="animate-fade-in">
+            <div class="text-center max-w-3xl mx-auto mb-12">
+                <h2 class="text-3xl font-extrabold text-slate-900 mb-4">İlan Yok, AI Destekli Aday Keşfi Var</h2>
+                <p class="text-lg text-slate-600 leading-relaxed">
+                    İlan yayınlamadan büyük bir aday havuzu oluşturan ve şirketlere kredi-temelli, AI destekli tarama ve raporlama sağlayan yeni nesil platform.
+                    <br><span class="text-indigo-600 font-semibold">Hedef:</span> Pasif adaylar için gizlilik, şirketler için nokta atışı 20 aday.
+                </p>
+            </div>
+
+            <!-- Value Prop Interactive Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Candidate Side -->
+                <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 relative overflow-hidden group hover:border-indigo-200 transition-colors">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <span class="text-9xl">👤</span>
+                    </div>
+                    <div class="relative z-10">
+                        <h3 class="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <span class="bg-indigo-100 text-indigo-700 p-2 rounded-lg text-sm">Aday Değeri</span>
+                        </h3>
+                        <ul class="space-y-4">
+                            <li class="flex items-start gap-3">
+                                <span class="mt-1 text-indigo-500">🔒</span>
+                                <div>
+                                    <strong class="block text-slate-900">Gizlilik Odaklı (Privacy-by-Default)</strong>
+                                    <span class="text-sm text-slate-500">CV, beklenti ve gizlilik ayarları ile 'pasif' görünürlük. Sadece izin verilen kanaldan iletişim.</span>
+                                </div>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span class="mt-1 text-indigo-500">🎯</span>
+                                <div>
+                                    <strong class="block text-slate-900">Gürültüsüz Süreç</strong>
+                                    <span class="text-sm text-slate-500">Gereksiz ilan tarama yok. Sistem sizi uygun fırsatla eşleştirir.</span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Company Side -->
+                <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 relative overflow-hidden group hover:border-emerald-200 transition-colors">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <span class="text-9xl">🏢</span>
+                    </div>
+                    <div class="relative z-10">
+                        <h3 class="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <span class="bg-emerald-100 text-emerald-700 p-2 rounded-lg text-sm">Şirket Değeri</span>
+                        </h3>
+                        <ul class="space-y-4">
+                            <li class="flex items-start gap-3">
+                                <span class="mt-1 text-emerald-500">⚡</span>
+                                <div>
+                                    <strong class="block text-slate-900">Hızlı & Nokta Atışı</strong>
+                                    <span class="text-sm text-slate-500">İlan açma yok. Kriterleri gir, AI ile filtrelenmiş 20'lik aday paketi al.</span>
+                                </div>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span class="mt-1 text-emerald-500">📊</span>
+                                <div>
+                                    <strong class="block text-slate-900">Detaylı Raporlama</strong>
+                                    <span class="text-sm text-slate-500">Her aday için skor, alt skorlar ve neden uygun olduğuna dair kısa rapor.</span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: ARCHITECTURE & WORKFLOW -->
+        <!-- Visualization: Interactive Flowchart using CSS Grid/Flex -->
+        <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+        <section id="architecture" class="bg-slate-900 rounded-3xl p-8 md:p-12 text-white relative overflow-hidden">
+            <div class="relative z-10">
+                <div class="flex flex-col md:flex-row justify-between items-end mb-8">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white mb-2">Sistem Mimarisi ve Veri Akışı</h2>
+                        <p class="text-slate-400 text-sm max-w-xl">
+                            Aday verisinin girişinden, şirkete sunulan rapora kadar olan yolculuk.
+                            <br>Detayları görmek için kutulara tıklayın.
+                        </p>
+                    </div>
+                    <div class="mt-4 md:mt-0">
+                        <span class="text-xs bg-slate-800 border border-slate-700 px-3 py-1 rounded-full text-slate-300">Teknoloji: Python, PostgreSQL, Vector DB, LLM</span>
+                    </div>
+                </div>
+
+                <!-- Interactive Architecture Flow -->
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+                    <!-- Step 1 -->
+                    <div onclick="showArchDetail(1)" class="interactive-card bg-slate-800 border border-slate-700 p-4 rounded-xl hover:bg-indigo-900 transition-colors text-center cursor-pointer">
+                        <div class="text-2xl mb-2">📥</div>
+                        <h4 class="font-bold text-sm">1. Veri Girişi</h4>
+                        <p class="text-xs text-slate-400 mt-1">CV & Kriterler</p>
+                    </div>
+                    <!-- Connector -->
+                    <div class="hidden md:flex items-center justify-center text-slate-600">➜</div>
+                    
+                    <!-- Step 2 -->
+                    <div onclick="showArchDetail(2)" class="interactive-card bg-slate-800 border border-slate-700 p-4 rounded-xl hover:bg-indigo-900 transition-colors text-center cursor-pointer">
+                        <div class="text-2xl mb-2">⚙️</div>
+                        <h4 class="font-bold text-sm">2. İşleme & Vektör</h4>
+                        <p class="text-xs text-slate-400 mt-1">Parsing & Embedding</p>
+                    </div>
+                    <!-- Connector -->
+                    <div class="hidden md:flex items-center justify-center text-slate-600">➜</div>
+                    
+                    <!-- Step 3 -->
+                    <div onclick="showArchDetail(3)" class="interactive-card bg-slate-800 border border-slate-700 p-4 rounded-xl hover:bg-indigo-900 transition-colors text-center cursor-pointer">
+                        <div class="text-2xl mb-2">🧠</div>
+                        <h4 class="font-bold text-sm">3. AI Eşleşme</h4>
+                        <p class="text-xs text-slate-400 mt-1">Semantik Arama & Skor</p>
+                    </div>
+                    <!-- Row Break for Mobile -->
+                    <div class="hidden md:block col-span-5 h-4"></div>
+                    
+                    <!-- Step 4 -->
+                    <div class="hidden md:block col-span-2"></div> <!-- Spacer -->
+                    <!-- Connector Vertical-ish Logic handled by flow -->
+                    
+                    <!-- Step 5 -->
+                    <div onclick="showArchDetail(4)" class="col-span-1 md:col-start-3 interactive-card bg-emerald-900/50 border border-emerald-800 p-4 rounded-xl hover:bg-emerald-900 transition-colors text-center cursor-pointer">
+                        <div class="text-2xl mb-2">📊</div>
+                        <h4 class="font-bold text-sm">4. Rapor & Çıktı</h4>
+                        <p class="text-xs text-emerald-200 mt-1">20'lik Liste + Analiz</p>
+                    </div>
+                </div>
+
+                <!-- Dynamic Detail Panel -->
+                <div id="arch-detail-panel" class="bg-slate-800/50 border border-slate-700 rounded-xl p-6 min-h-[120px] flex items-center transition-all">
+                    <p class="text-slate-300 italic">Mimarinin detaylarını görmek için yukarıdaki adımlara tıklayın.</p>
+                </div>
+            </div>
+            
+            <!-- Background Decoration -->
+            <div class="absolute -top-20 -right-20 w-64 h-64 bg-indigo-600 rounded-full blur-3xl opacity-20"></div>
+            <div class="absolute -bottom-20 -left-20 w-64 h-64 bg-emerald-600 rounded-full blur-3xl opacity-20"></div>
+        </section>
+
+        <!-- SECTION 3: BUSINESS MODEL SIMULATOR -->
+        <section id="business" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Left: Description -->
+            <div class="lg:col-span-4 space-y-6">
+                <h2 class="text-2xl font-bold text-slate-900">İş Modeli ve Gelir Akışı</h2>
+                <p class="text-slate-600">
+                    Adaybul, geleneksel abonelik modelinden ziyade "kullandığın kadar öde" ve "sonuç odaklı" bir kredi sistemine dayanır.
+                </p>
+                
+                <div class="space-y-4">
+                    <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-indigo-700 mb-1">🎫 Kredi Sistemi</h4>
+                        <p class="text-sm text-slate-600">Şirketler aday aramak ve rapor almak için kredi satın alır. Her 20'lik aday listesi = X Kredi.</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-teal-700 mb-1">🏢 Kurumsal Abonelik</h4>
+                        <p class="text-sm text-slate-600">Düzenli işe alım yapanlar için aylık sabit kredi + premium özellikler içeren paketler.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center: Interactive Calculator -->
+            <div class="lg:col-span-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-lg">
+                <h3 class="text-lg font-bold text-slate-900 mb-4 border-b border-slate-100 pb-2">Gelir Simülatörü</h3>
+                
+                <div class="space-y-4 mb-6">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Aktif Şirket Sayısı</label>
+                        <input type="range" id="companyCount" min="10" max="1000" value="50" step="10" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+                        <div class="flex justify-between text-sm mt-1 font-medium text-slate-700">
+                            <span>10</span>
+                            <span id="companyCountVal" class="text-indigo-600">50</span>
+                            <span>1000</span>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Ortalama Kredi/Ay (Paket Başı)</label>
+                        <input type="range" id="creditPrice" min="1000" max="10000" value="2500" step="500" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600">
+                        <div class="flex justify-between text-sm mt-1 font-medium text-slate-700">
+                            <span>1K ₺</span>
+                            <span id="creditPriceVal" class="text-emerald-600">2.5K ₺</span>
+                            <span>10K ₺</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 p-4 rounded-xl text-center border border-slate-200">
+                    <p class="text-xs text-slate-500 font-medium mb-1">Tahmini Aylık Ciro</p>
+                    <p id="totalRevenue" class="text-3xl font-extrabold text-slate-900">125.000 ₺</p>
+                </div>
+            </div>
+
+            <!-- Right: Chart -->
+            <div class="lg:col-span-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center">
+                <h3 class="text-sm font-bold text-slate-900 mb-4 self-start">Hedef Gelir Dağılımı</h3>
+                <div class="chart-container" style="height: 200px;">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: ROADMAP & KPI -->
+        <!-- Visualization: Flex Timeline + Line Chart -->
+        <section id="roadmap" class="space-y-8">
+            <div class="flex flex-col md:flex-row justify-between items-end border-b border-slate-200 pb-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900">Yol Haritası ve Hedefler</h2>
+                    <p class="text-slate-600 text-sm">4 Fazlık MVP ve Lansman Planı</p>
+                </div>
+                <!-- Tabs for Roadmap/KPI -->
+                <div class="flex space-x-2 mt-4 md:mt-0 bg-slate-100 p-1 rounded-lg">
+                    <button onclick="switchTab('tab-timeline')" id="btn-tab-timeline" class="px-4 py-1.5 rounded-md text-sm font-medium bg-white shadow text-indigo-600 transition-all">Zaman Çizelgesi</button>
+                    <button onclick="switchTab('tab-kpi')" id="btn-tab-kpi" class="px-4 py-1.5 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 transition-all">KPI Hedefleri</button>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div id="tab-timeline" class="block animate-fade-in">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <!-- Phase 1 -->
+                    <div class="bg-white p-5 rounded-xl border-l-4 border-indigo-500 shadow-sm">
+                        <span class="text-xs font-bold text-indigo-500 uppercase tracking-wide">Faz 1 (H1-2)</span>
+                        <h4 class="font-bold text-slate-900 text-lg mt-1 mb-2">Temel Altyapı</h4>
+                        <ul class="text-sm text-slate-600 space-y-1 list-disc list-inside">
+                            <li>Veritabanı tasarımı</li>
+                            <li>CV Parser (Beta)</li>
+                            <li>Basic Frontend</li>
+                        </ul>
+                    </div>
+                    <!-- Phase 2 -->
+                    <div class="bg-white p-5 rounded-xl border-l-4 border-blue-400 shadow-sm opacity-80">
+                        <span class="text-xs font-bold text-blue-400 uppercase tracking-wide">Faz 2 (H2-4)</span>
+                        <h4 class="font-bold text-slate-900 text-lg mt-1 mb-2">AI Motoru</h4>
+                        <ul class="text-sm text-slate-600 space-y-1 list-disc list-inside">
+                            <li>Vector Search Entegrasyonu</li>
+                            <li>Matching Algoritması</li>
+                            <li>Güvenlik Katmanı</li>
+                        </ul>
+                    </div>
+                    <!-- Phase 3 -->
+                    <div class="bg-white p-5 rounded-xl border-l-4 border-teal-400 shadow-sm opacity-60">
+                        <span class="text-xs font-bold text-teal-400 uppercase tracking-wide">Faz 3 (H4-6)</span>
+                        <h4 class="font-bold text-slate-900 text-lg mt-1 mb-2">MVP Test</h4>
+                        <ul class="text-sm text-slate-600 space-y-1 list-disc list-inside">
+                            <li>Pilot Şirket Testleri</li>
+                            <li>Feedback Loop</li>
+                            <li>UI İyileştirmeleri</li>
+                        </ul>
+                    </div>
+                    <!-- Phase 4 -->
+                    <div class="bg-white p-5 rounded-xl border-l-4 border-slate-300 shadow-sm opacity-50">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Faz 4 (H6+)</span>
+                        <h4 class="font-bold text-slate-900 text-lg mt-1 mb-2">Lansman</h4>
+                        <ul class="text-sm text-slate-600 space-y-1 list-disc list-inside">
+                            <li>Genel Erişim</li>
+                            <li>Pazarlama</li>
+                            <li>API Entegrasyonları</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-kpi" class="hidden animate-fade-in">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <h3 class="font-bold text-slate-900 mb-4">Büyüme Projeksiyonu (Aday vs Şirket)</h3>
+                        <div class="chart-container">
+                            <canvas id="growthChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+                            <h4 class="text-indigo-800 font-bold text-sm">🎯 Eşleşme Kalitesi</h4>
+                            <p class="text-2xl font-bold text-indigo-900 mt-1">%85+</p>
+                            <p class="text-xs text-indigo-600">Shortlist -> Görüşme Dönüşümü</p>
+                        </div>
+                        <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
+                            <h4 class="text-emerald-800 font-bold text-sm">⏱️ Operasyon Hızı</h4>
+                            <p class="text-2xl font-bold text-emerald-900 mt-1">&lt; 2 dk</p>
+                            <p class="text-xs text-emerald-600">Arama başına rapor oluşturma</p>
+                        </div>
+                        <div class="bg-rose-50 p-4 rounded-xl border border-rose-100">
+                            <h4 class="text-rose-800 font-bold text-sm">🛡️ Güvenlik</h4>
+                            <p class="text-2xl font-bold text-rose-900 mt-1">0</p>
+                            <p class="text-xs text-rose-600">Kritik KVKK ihlali hedefi</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 5: RISK MATRIX -->
+        <!-- Visualization: HTML Table/Heatmap -->
+        <section class="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm">
+            <h2 class="text-2xl font-bold text-slate-900 mb-6">Risk Analizi ve Önlemler</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-slate-50 text-slate-500 uppercase font-bold border-b border-slate-200">
+                        <tr>
+                            <th class="px-4 py-3">Risk Başlığı</th>
+                            <th class="px-4 py-3">Etki Alanı</th>
+                            <th class="px-4 py-3 text-center">Önem</th>
+                            <th class="px-4 py-3">Azaltma Stratejisi (Mitigation)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <tr class="hover:bg-slate-50">
+                            <td class="px-4 py-3 font-medium text-slate-900">KVKK/GDPR Uyumsuzluğu</td>
+                            <td class="px-4 py-3 text-slate-600">Yasal / İtibar</td>
+                            <td class="px-4 py-3 text-center"><span class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-xs font-bold">YÜKSEK</span></td>
+                            <td class="px-4 py-3 text-slate-600">Açık rıza, silme akışları, loglama, minimizasyon.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50">
+                            <td class="px-4 py-3 font-medium text-slate-900">Scraping / Veri Sızıntısı</td>
+                            <td class="px-4 py-3 text-slate-600">Aday Güveni</td>
+                            <td class="px-4 py-3 text-center"><span class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-xs font-bold">YÜKSEK</span></td>
+                            <td class="px-4 py-3 text-slate-600">Watermark, rate limiting, audit logs, bot koruma.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50">
+                            <td class="px-4 py-3 font-medium text-slate-900">Düşük Eşleşme Kalitesi</td>
+                            <td class="px-4 py-3 text-slate-600">Gelir Kaybı</td>
+                            <td class="px-4 py-3 text-center"><span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-xs font-bold">ORTA</span></td>
+                            <td class="px-4 py-3 text-slate-600">Sürekli feedback loop, test setleri, ağırlık kalibrasyonu.</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50">
+                            <td class="px-4 py-3 font-medium text-slate-900">AI Maliyet Artışı (Token)</td>
+                            <td class="px-4 py-3 text-slate-600">Kârlılık</td>
+                            <td class="px-4 py-3 text-center"><span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold">DÜŞÜK</span></td>
+                            <td class="px-4 py-3 text-slate-600">Caching, daha küçük modellerin kullanımı, prompt optimizasyonu.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-slate-900 text-slate-400 py-12 border-t border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="font-bold text-white mb-2">Adaybul / Adayhavuzu</p>
+            <p class="text-sm">Bu döküman AI Agent sistemi tarafından oluşturulan Master Proje Yönetim Dokümanının interaktif versiyonudur.</p>
+            <p class="text-xs mt-8 opacity-50">&copy; 2025 Adaybul Proje Ekibi. Dahili Kullanım İçindir.</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // --- State Management ---
+        const state = {
+            companyCount: 50,
+            creditPrice: 2500,
+            currentTab: 'tab-timeline'
+        };
+
+        // --- Core Functions ---
+
+        // Navigation Scroll
+        function scrollToSection(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        // Architecture Detail Interaction
+        function showArchDetail(stepId) {
+            const panel = document.getElementById('arch-detail-panel');
+            let content = '';
+            let borderColor = 'border-slate-700';
+
+            switch(stepId) {
+                case 1: // Input
+                    content = `
+                        <div>
+                            <strong class="text-indigo-400 block mb-1">Veri Giriş Katmanı</strong>
+                            <ul class="text-sm text-slate-300 list-disc list-inside">
+                                <li>Aday: PDF/Word CV Yükleme, Profil Formu.</li>
+                                <li>Şirket: Pozisyon Tanımı, Zorunlu/Tercihli Kriterler.</li>
+                                <li>Güvenlik: Ön doğrulama ve format kontrolü.</li>
+                            </ul>
+                        </div>`;
+                    borderColor = 'border-indigo-500';
+                    break;
+                case 2: // Processing
+                    content = `
+                        <div>
+                            <strong class="text-blue-400 block mb-1">İşleme & Vektörleştirme</strong>
+                            <ul class="text-sm text-slate-300 list-disc list-inside">
+                                <li>CV Parser: Metin ayıklama ve anonimleştirme.</li>
+                                <li>Embedding: Metnin sayısal vektöre dönüşümü (OpenAI/Cohere).</li>
+                                <li>Vector DB: Hızlı semantik arama için kayıt (Pinecone/Weaviate).</li>
+                            </ul>
+                        </div>`;
+                     borderColor = 'border-blue-500';
+                    break;
+                case 3: // AI Matching
+                    content = `
+                        <div>
+                            <strong class="text-purple-400 block mb-1">AI Eşleşme Motoru</strong>
+                            <ul class="text-sm text-slate-300 list-disc list-inside">
+                                <li>Semantik Arama: Anlamsal yakınlık taraması.</li>
+                                <li>LLM Analizi: Adayın kriterlere uygunluk skoru (0-100).</li>
+                                <li>Reranking: En iyi 20 adayın sıralanması.</li>
+                            </ul>
+                        </div>`;
+                    borderColor = 'border-purple-500';
+                    break;
+                case 4: // Output
+                    content = `
+                        <div>
+                            <strong class="text-emerald-400 block mb-1">Raporlama ve Çıktı</strong>
+                            <ul class="text-sm text-slate-300 list-disc list-inside">
+                                <li>Özet Kartlar: Her aday için "Neden Uygun?" açıklaması.</li>
+                                <li>Skorlama: Teknik, Deneyim ve Kültür alt skorları.</li>
+                                <li>Anonim Gösterim: İsim ve iletişim gizli sunum.</li>
+                            </ul>
+                        </div>`;
+                    borderColor = 'border-emerald-500';
+                    break;
+            }
+            
+            panel.innerHTML = content;
+            panel.className = `bg-slate-800/80 border ${borderColor} rounded-xl p-6 min-h-[120px] flex items-center transition-all shadow-lg`;
+        }
+
+        // Business Simulator Logic
+        function updateSimulation() {
+            const count = parseInt(document.getElementById('companyCount').value);
+            const price = parseInt(document.getElementById('creditPrice').value);
+            
+            state.companyCount = count;
+            state.creditPrice = price;
+
+            // UI Updates
+            document.getElementById('companyCountVal').textContent = count;
+            document.getElementById('creditPriceVal').textContent = (price / 1000).toFixed(1) + 'K ₺';
+
+            // Calc
+            const revenue = count * price;
+            document.getElementById('totalRevenue').textContent = new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumSignificantDigits: 3 }).format(revenue);
+        }
+
+        // Tab Switching
+        function switchTab(tabId) {
+            document.getElementById('tab-timeline').classList.add('hidden');
+            document.getElementById('tab-kpi').classList.add('hidden');
+            
+            document.getElementById('btn-tab-timeline').className = "px-4 py-1.5 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 transition-all";
+            document.getElementById('btn-tab-kpi').className = "px-4 py-1.5 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 transition-all";
+
+            document.getElementById(tabId).classList.remove('hidden');
+            
+            // Active State Style
+            if(tabId === 'tab-timeline') {
+                document.getElementById('btn-tab-timeline').className = "px-4 py-1.5 rounded-md text-sm font-medium bg-white shadow text-indigo-600 transition-all";
+            } else {
+                document.getElementById('btn-tab-kpi').className = "px-4 py-1.5 rounded-md text-sm font-medium bg-white shadow text-indigo-600 transition-all";
+                // Resize chart if needed when becoming visible
+                if(window.growthChartInstance) window.growthChartInstance.resize();
+            }
+        }
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // Event Listeners for Simulator
+            document.getElementById('companyCount').addEventListener('input', updateSimulation);
+            document.getElementById('creditPrice').addEventListener('input', updateSimulation);
+
+            // --- Charts Initialization (Chart.js) ---
+            
+            // 1. Revenue Distribution Chart
+            const ctxRev = document.getElementById('revenueChart').getContext('2d');
+            new Chart(ctxRev, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Kredi Satışı (Tekil)', 'Kurumsal Abonelik', 'Ek Hizmetler'],
+                    datasets: [{
+                        data: [60, 30, 10],
+                        backgroundColor: [
+                            '#4f46e5', // Indigo 600
+                            '#10b981', // Emerald 500
+                            '#94a3b8'  // Slate 400
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } }
+                    }
+                }
+            });
+
+            // 2. Growth Projection Chart
+            const ctxGrowth = document.getElementById('growthChart').getContext('2d');
+            window.growthChartInstance = new Chart(ctxGrowth, {
+                type: 'line',
+                data: {
+                    labels: ['Ay 1', 'Ay 2', 'Ay 3', 'Ay 4', 'Ay 5', 'Ay 6'],
+                    datasets: [
+                        {
+                            label: 'Aday Havuzu (x100)',
+                            data: [5, 12, 25, 45, 80, 150],
+                            borderColor: '#4f46e5',
+                            backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Aktif Şirket',
+                            data: [2, 5, 10, 18, 30, 50],
+                            borderColor: '#10b981',
+                            backgroundColor: 'transparent',
+                            borderDash: [5, 5],
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            titleFont: { family: 'Inter', size: 13 },
+                            bodyFont: { family: 'Inter', size: 13 },
+                            padding: 10,
+                            cornerRadius: 8
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            // Initial Sim Update
+            updateSimulation();
+        });
+
+    </script>
+</body>
+</html>
